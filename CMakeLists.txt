@@ -14,5 +14,6 @@ add_executable(cblaze
 )
 
 target_include_directories(cblaze PRIVATE .)
+target_include_directories(cblaze PRIVATE . /usr/include/dpp)
 
 target_link_libraries(cblaze PRIVATE dpp)
