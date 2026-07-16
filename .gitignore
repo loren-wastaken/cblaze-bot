@@ -1,0 +1,6 @@
+build/
+.vscode
+*.exe
+cblaze.exe
+*.elf
+cblaze.elf

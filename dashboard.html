@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Cblaze Dashboard</title>
+<style>
+  body { display: flex; font-family: sans-serif; margin: 0; background: #1e1f22; color: #eee; }
+  nav { width: 200px; background: #2b2d31; padding: 20px; height: 100vh; box-sizing: border-box; }
+  nav button { display: block; width: 100%; padding: 10px; margin-bottom: 8px; background: #383a40; color: #fff; border: none; border-radius: 6px; cursor: pointer; text-align: left; }
+  nav button.active { background: #5865f2; }
+  main { flex: 1; padding: 30px; }
+  section { display: none; }
+  section.active { display: block; }
+  input, textarea, select { width: 100%; padding: 8px; margin: 6px 0; background: #383a40; border: 1px solid #444; color: #fff; border-radius: 4px; box-sizing: border-box; }
+  button.action { background: #5865f2; color: #fff; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; margin-top: 10px; }
+  #log { margin-top: 30px; font-size: 13px; color: #aaa; white-space: pre-wrap; }
+  .role-row { display: flex; gap: 8px; margin-bottom: 6px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <h2>🔥 Cblaze</h2>
+  <button class="active" onclick="showSection('send')">Send Message</button>
+  <button onclick="showSection('roles')">Create Role</button>
+  <button onclick="showSection('reaction')">Reaction Roles</button>
+</nav>
+
+<main>
+  <section id="send" class="active">
+    <h1>Send Message</h1>
+    <label>Channel ID</label>
+    <input id="send-channel" placeholder="123456789012345678">
+    <label>Message</label>
+    <textarea id="send-content" rows="4"></textarea>
+    <button class="action" onclick="sendMessage()">Send</button>
+  </section>
+
+  <section id="roles">
+    <h1>Create Role</h1>
+    <label>Guild ID</label>
+    <input id="role-guild" placeholder="123456789012345678">
+    <label>Role Name</label>
+    <input id="role-name" placeholder="Coder">
+    <label>Color (hex, no #)</label>
+    <input id="role-color" placeholder="3498db">
+    <label><input type="checkbox" id="role-hoist"> Show separately (hoist)</label><br>
+    <label><input type="checkbox" id="role-mentionable"> Mentionable</label>
+    <button class="action" onclick="createRole()">Create Role</button>
+  </section>
+
+  <section id="reaction">
+    <h1>Reaction Role Message</h1>
+    <label>Channel ID</label>
+    <input id="rr-channel" placeholder="123456789012345678">
+    <label>Message Content</label>
+    <textarea id="rr-content" rows="3">React to get a role!</textarea>
+    <div id="rr-rows">
+      <div class="role-row">
+        <input placeholder="Emoji (e.g. 🔥)" class="rr-emoji">
+        <input placeholder="Role ID" class="rr-role">
+      </div>
+    </div>
+    <button class="action" onclick="addRoleRow()">+ Add Role</button>
+    <button class="action" onclick="createReactionRole()">Post Message</button>
+  </section>
+
+  <div id="log"></div>
+</main>
+
+<script>
+  const ws = new WebSocket("ws://localhost:2424");
+  const log = (msg) => {
+    document.getElementById('log').innerText += msg + "\n";
+  };
+  ws.onopen = () => log("Connected to Cblaze.");
+  ws.onmessage = (event) => log("Event: " + event.data);
+  ws.onclose = () => log("Disconnected.");
+
+  function showSection(id) {
+    document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    event.target.classList.add('active');
+  }
+
+  function sendMessage() {
+    const payload = {
+      action: "send_message",
+      channel_id: document.getElementById('send-channel').value,
+      content: document.getElementById('send-content').value
+    };
+    ws.send(JSON.stringify(payload));
+    log("Sent: " + JSON.stringify(payload));
+  }
+
+  function createRole() {
+    const payload = {
+      action: "create_role",
+      guild_id: document.getElementById('role-guild').value,
+      name: document.getElementById('role-name').value,
+      color: document.getElementById('role-color').value || "99AAB5",
+      hoist: document.getElementById('role-hoist').checked,
+      mentionable: document.getElementById('role-mentionable').checked
+    };
+    ws.send(JSON.stringify(payload));
+    log("Sent: " + JSON.stringify(payload));
+  }
+
+  function addRoleRow() {
+    const row = document.createElement('div');
+    row.className = 'role-row';
+    row.innerHTML = `<input placeholder="Emoji (e.g. 🔥)" class="rr-emoji"><input placeholder="Role ID" class="rr-role">`;
+    document.getElementById('rr-rows').appendChild(row);
+  }
+
+  function createReactionRole() {
+    const roles = [...document.querySelectorAll('#rr-rows .role-row')].map(row => ({
+      emoji: row.querySelector('.rr-emoji').value,
+      role_id: row.querySelector('.rr-role').value
+    }));
+    const payload = {
+      action: "create_reaction_role",
+      channel_id: document.getElementById('rr-channel').value,
+      content: document.getElementById('rr-content').value,
+      roles: roles
+    };
+    ws.send(JSON.stringify(payload));
+    log("Sent: " + JSON.stringify(payload));
+  }
+</script>
+</body>
+</html>
