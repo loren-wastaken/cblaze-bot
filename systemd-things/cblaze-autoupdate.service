@@ -1,0 +1,8 @@
+[Unit]
+Description=Cblaze auto-update check
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/root/cblaze-bot/cblaze-autoupdate.sh

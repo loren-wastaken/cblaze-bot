@@ -4,3 +4,5 @@ build/
 cblaze.exe
 *.elf
 cblaze.elf
+*.html
+dashboard.html
